@@ -1,0 +1,87 @@
+{-----------------------------------------------------------------------+
+|                                                                       |
+|                         Star Screensaver                              |
+|                                                                       |
++-----------------------------------------------------------------------}
+
+gcl0x                           {GCL version for this program}
+
+{ First define some subroutines }
+{ Just copy what you need from other programs and adapt }
+
+{ Clear screen }
+[def
+  $9001 j=                      {Step size to next vertical screen line}
+  $800                          {Start of screen memory}
+  i=                            {Step size to next vertical slice of 8 pixels}
+  \sysArgs2.                    {All-zero 8-bit pattern}
+  [do                           {Outer horizontal loop}
+    [do                         {Inner vertical loop}
+      \sysArgs4= 134!           {VDrawBits SYS call clears 8 pixels vertically}
+      i+ if>0loop]              {Go down and repeat for entire vertical stripe}
+    255& 159^ if<>0             {Until completing X=159 position}
+    \sysArgs4; j+ loop]         {Step to next vertical stripe and repeat}
+  ret
+] ClearScreen=
+
+[def
+  [do
+    \SYS_Random_34 \sysFn= 34! q=
+    q<, Value- if>=0loop]
+  q<, Value=
+  ret
+] random=
+
+[def
+  Value loop_var=
+  [do
+    loop_var 1- loop_var=
+  loop_var if>0loop]
+  ret
+] sleep=
+
+{ After the setup above the main program can start }
+{ Clear the screen and print our friendly message! }
+
+\SYS_VDrawBits_134 \sysFn=      {Prepare SYS calls}
+$ff00 \sysArgs0:                {White pen color and black background}
+ClearScreen!                    {Erase all screen data}
+
+$0800 top_left=
+$089f top_right=
+$7f00 bottom_left=
+$7f9f bottom_right=
+$454f center=
+
+[def
+  0 times=
+  [do
+    {$00 star.}
+    star<, vel_x+ star<.
+    star>, vel_y+ star>.
+    $ff star.
+    50 Value= sleep!
+    times 1+ times=
+    {star<, $9f- [ if>0 1 else 0 ] off_right=
+    star<, 0- [ if>0 1 else 0 ] off_left=
+    star>, $08- [ if<0 1 else 0 ] off_top=
+    star>, $7f- [ if>0 1 else 0 ] off_bottom=
+    off_right off_left+ off_top+ off_bottom+ if=0loop]}
+    26 times- if>0loop]
+  ret
+] fly_star=
+
+{-----------------------------------------------------------------------+
+|}\vLR>++ ret{          RAM page 3                                      |
++-----------------------------------------------------------------------}
+$0300:
+
+[do
+  center star=
+  6 Value= random! vel_x=
+  -3 Value+ [ if>0 2 Value- else Value ] vel_x=
+  4 Value= random! vel_y=
+  -2 Value+ [ if>0 1 Value- else Value ] vel_y=
+  fly_star!
+loop]
+
